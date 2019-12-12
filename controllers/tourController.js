@@ -1,5 +1,13 @@
 const Tour = require('./../models/tourModel');
 
+exports.aliasTopTours = (req, res, next) => {
+  // pre-fills the query before it reaches the controlelr method:
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage,price';
+  req.query.fields = 'name,price,ratingsAverage,summary,dificulty';
+  next();
+};
+
 // const tours = JSON.parse(
 //     fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
 // );
