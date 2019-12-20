@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
-const validator = require('validator');
+// const validator = require('validator');
 
 const toursSchema = new mongoose.Schema(
   {
@@ -47,7 +47,7 @@ const toursSchema = new mongoose.Schema(
     priceDiscount: {
       type: Number,
       validate: {
-        validator: function(val) {
+        validator: function (val) {
           // custom validator fxn: false triggers validation error
           return val < this.price; // 'this' only points to current doc on create, but not on update.
         },
@@ -84,11 +84,18 @@ const toursSchema = new mongoose.Schema(
     toObject: { virtuals: true }
   }
 );
+
+
+
 // Document Middleware: (runs before .save() and .create(), but NOT insertMany(). )
-toursSchema.pre('save', function(next) {
+toursSchema.pre('save', function (next) {
   //  console.log(this); // "this" is bound to current document being saved.
   this.slug = slugify(this.name, { lower: true });
   next();
+});
+
+toursSchema.virtual('durationWeeks').get(function () {
+  return this.duration / 7; // 'this' points to current document, hence the es5 function
 });
 
 // toursSchema.pre('save', function(next) {
@@ -101,12 +108,8 @@ toursSchema.pre('save', function(next) {
 //   next();
 // });
 
-toursSchema.virtual('durationWeeks').get(function() {
-  return this.duration / 7; // 'this' points to current document, hence the es5 function
-});
-
 // QUERY MIDDLEWARE
-toursSchema.pre(/^find/, function(next) {
+toursSchema.pre(/^find/, function (next) {
   // this fxn filters out tours where secretTour === true when the "find", "findOne", or "findById" hooks run.
   this.find({ secretTour: { $ne: true } });
 
@@ -114,14 +117,14 @@ toursSchema.pre(/^find/, function(next) {
   next();
 });
 
-toursSchema.post(/^find/, function(docs, next) {
+toursSchema.post(/^find/, function (docs, next) {
   console.log(`Query took ${Date.now() - this.start} milliseconds`);
   // console.log({ docs });
   next();
 });
 
 // AGGREGATION MIDDLEWARE
-toursSchema.pre('aggregate', function(next) {
+toursSchema.pre('aggregate', function (next) {
   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
   console.log(this.pipeline()); // 'this' points to current aggregation object
   next();
